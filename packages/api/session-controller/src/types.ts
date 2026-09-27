@@ -251,6 +251,10 @@ export interface SkillEntry {
   readonly description: string
   /** Optional extra routing guidance. */
   readonly whenToUse?: string
+  /** Optional human-facing collection label, such as a repository name. */
+  readonly group?: string
+  /** Installation scope that contributed the winning skill. */
+  readonly source: string
   /** Whether the same skill is also advertised to the model. */
   readonly modelInvocable: boolean
 }

@@ -29,7 +29,9 @@
  * wait for its initial history open to succeed before contacting the Host.
  *
  * This browser half also owns the `skill` keyed toolview: a replay-stable
- * accent row derived only from each logged call/result slice.
+ * accent row derived only from each logged call/result slice, and the
+ * Settings → Plugins → Skills tab, which reads the same cached catalog and
+ * reloads when that session's key settles or is invalidated.
  */
 // Type-only: the carrier types, the forwarded Host-event face and the ctx.remote merge.
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar-right/client'
@@ -44,7 +46,10 @@ import { rankByName } from '@deepseek-ai/dsh-client-ui-primitives'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 // Type-only: pulls the SlotRegistry service merge (ctx.slots).
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
+import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
+import { sectionSkills } from './catalog.ts'
 import { SkillRow } from './SkillRow.tsx'
+import { SkillsSettingsTab, type SkillsSettingsTabInjected } from './SkillsSettingsTab.tsx'
 import { en, NS, zh, type SkillKey } from './locales.ts'
 
 declare module '@deepseek-ai/dsh-api-session-controller/client' {
@@ -56,7 +61,7 @@ declare module '@deepseek-ai/dsh-api-session-controller/client' {
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
-    /** The dedicated skill tool row's copy. */
+    /** Copy for the skill tool row, the `/` menu, and the Skills settings tab. */
     skill: SkillKey
   }
 }
@@ -88,7 +93,7 @@ export function apply(ctx: ClientContext): void {
   // Session-keyed catalog cache; single-flight per key. Plugin-closure state:
   // the fiber effect below is its teardown boundary.
   const fetches = new Map<SessionId, CatalogFetch>()
-  // Per-session lexicon invalidation listeners (subscribeLexicon consumers).
+  // Per-session catalog settle/invalidation listeners (subscribeLexicon and the Skills settings tab).
   const lexiconListeners = new Map<SessionId, Set<() => void>>()
 
   const notifyLexicon = (sessionId: SessionId): void => {
@@ -152,6 +157,16 @@ export function apply(ctx: ClientContext): void {
     for (const key of [...fetches.keys()]) invalidate(key)
   }
 
+  const subscribe = (key: SessionId, listener: () => void): (() => void) => {
+    const listeners = lexiconListeners.get(key) ?? new Set()
+    listeners.add(listener)
+    lexiconListeners.set(key, listeners)
+    return () => {
+      listeners.delete(listener)
+      if (listeners.size === 0) lexiconListeners.delete(key)
+    }
+  }
+
   // The bound translate resolves against the registered dictionaries with the
   // locale service's own fallback ladder; candidate-time reads stay plain text.
   const t = ctx.locale.bind(NS)
@@ -166,14 +181,15 @@ export function apply(ctx: ClientContext): void {
       // Superseded keystroke: the shared fetch stays warm, this caller yields.
       if (signal.aborted) return []
       // The same ranking as the command group of this menu: case-insensitive
-      // ordered subsequence, prefix hits first.
-      return rankByName(skills, query)
-        .map(skill => ({
-          name: skill.name,
-          // The user-only marker rides the description (the menu's only
-          // secondary text); `hint` is the claim-state ghost text, not a badge.
-          description: skill.modelInvocable ? skill.description : `${t('menu.userOnly')} · ${skill.description}`,
-        }))
+      // ordered subsequence, prefix hits first. A typed query keeps that rank
+      // (sections follow their best match); an empty one lists A→Z.
+      return sectionSkills(rankByName(skills, query), query === '').flatMap(section => section.skills.map(skill => ({
+        name: skill.name,
+        section: section.kind === 'group' ? section.group : t(section.scope),
+        // The user-only marker rides the description (the menu's only
+        // secondary text); `hint` is the claim-state ghost text, not a badge.
+        description: skill.modelInvocable ? skill.description : `${t('menu.userOnly')} · ${skill.description}`,
+      })))
     },
     warm(session) {
       // Fire-and-forget scope-birth prewarm; the shared fetch reports
@@ -185,14 +201,7 @@ export function apply(ctx: ClientContext): void {
       return fetches.get(session.sessionId)?.settled?.map(skill => skill.name)
     },
     subscribeLexicon(session, listener) {
-      const key = session.sessionId
-      const listeners = lexiconListeners.get(key) ?? new Set()
-      listeners.add(listener)
-      lexiconListeners.set(key, listeners)
-      return () => {
-        listeners.delete(listener)
-        if (listeners.size === 0) lexiconListeners.delete(key)
-      }
+      return subscribe(session.sessionId, listener)
     },
     openReference(session, { ref }) {
       if (sessions.subagentAddress(session.sessionId) !== undefined) return false
@@ -225,6 +234,20 @@ export function apply(ctx: ClientContext): void {
     },
   }
   const inputTriggers = ctx.get('inputTriggers') as InputTriggerServiceContract
+  const settingsInjected = (): SkillsSettingsTabInjected => ({
+    list: async sessionId => await fetchCatalog(sessionId).promise,
+    subscribe,
+    // The same exclusion as candidates/warm/openReference: a subagent session has no catalog of its own.
+    hasCatalog: sessionId => sessions.subagentAddress(sessionId) === undefined,
+  })
+  ctx.slots.inject('settings.plugins.tab', () => ctx.slots.register({
+    name: 'settings.plugins.tab',
+    id: 'skills',
+    order: 20,
+    label: () => t('overview.tab'),
+    locale: NS,
+    inject: settingsInjected,
+  }, SkillsSettingsTab))
   // A preset decides which skill providers an agent reads, so a switched
   // session's cached catalog belongs to the composition it no longer runs.
   ctx.remote.$on('agent-preset/selected', invalidate)

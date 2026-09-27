@@ -1,0 +1,20 @@
+- listbox "Trigger suggestions":
+  - text: Add
+  - option "File" [selected]
+  - option "Goal Set or view the goal for a long-running task"
+  - option "Plan Enter or leave plan mode"
+  - option "Feedback Record feedback about this session"
+  - text: Commands
+  - option "Compact Compact older conversation history"
+  - option "Permission Switch the permission preset (sandbox mode + approval policy)"
+  - option "Model Select the model for this conversation"
+  - option "Export Download this Session log as a ZIP archive"
+  - text: Docs
+  - option "docs-lint Lint Markdown documentation"
+  - text: Release
+  - option "changelog-check Check the changelog against tagged commits"
+  - option "release-notes Draft release notes from merged changes"
+  - text: Project
+  - option "tidy-imports Sort and prune imports"
+  - text: User installed
+  - option "standup-summary user-only · Summarize yesterday for standup"

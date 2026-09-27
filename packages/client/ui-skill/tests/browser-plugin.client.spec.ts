@@ -24,8 +24,18 @@ import type { RemoteFailure } from '@deepseek-ai/dsh-api-remotes/client'
 import type { ClientSessionContext, InputTriggerSource } from '@deepseek-ai/dsh-client-ui-input-trigger/client'
 import { apply, inject } from '../src/client/index.ts'
 import { SkillRow as SkillToolRow } from '../src/client/SkillRow.tsx'
+import { SkillsSettingsTab, type SkillsSettingsTabInjected } from '../src/client/SkillsSettingsTab.tsx'
+import { en, zh } from '../src/client/locales.ts'
 
-type SkillRow = { name: string; description: string; whenToUse?: string; path?: string; modelInvocable?: boolean }
+type SkillRow = {
+  name: string
+  description: string
+  whenToUse?: string
+  path?: string
+  group?: string
+  source?: string
+  modelInvocable?: boolean
+}
 type ListResult =
   | { ok: true; value: { skills: SkillRow[] } }
   | { ok: false; error: RemoteFailure }
@@ -42,7 +52,10 @@ function providePresentation(ctx: Context): PresentationCapture {
   const slots = new SlotRegistry(ctx)
   slots.register({
     name: 'root',
-    children: { 'tool.call.toolview': { kind: 'keyed', scope: 'session' } },
+    children: {
+      'tool.call.toolview': { kind: 'keyed', scope: 'session' },
+      'settings.plugins.tab': { kind: 'list', scope: 'root' },
+    },
   } as never, () => null)
   const capture: PresentationCapture = {
     slots,
@@ -55,7 +68,7 @@ function providePresentation(ctx: Context): PresentationCapture {
       return () => { capture.localeDisposed = true }
     },
     // Minimal bound-translate fake: zh dictionary lookup, key passthrough on miss.
-    bind: () => (key: string) => key === 'menu.userOnly' ? '仅用户' : key,
+    bind: () => (key: string) => (zh as Record<string, string>)[key] ?? key,
   })
   return capture
 }
@@ -80,17 +93,17 @@ async function bench(list: ListFn, addressed?: SessionId, opening: Pick<SessionF
       : sid(id))
   }
   const remote = new TestRemote(ctx, { skills: { list } })
-  providePresentation(ctx)
+  const presentation = providePresentation(ctx)
   const fiber = ctx.plugin({ inject: [...inject], apply })
   onTestFinished(async () => { await fiber.dispose() })
   await fiber.await()
-  return { ctx, source: captured!, remote, fiber, openResource, sessions }
+  return { ctx, source: captured!, remote, fiber, openResource, sessions, presentation }
 }
 
 const CATALOG: SkillRow[] = [
-  { name: 'commit-helper', description: 'commit flow', modelInvocable: true },
-  { name: 'code-review', description: 'review flow', whenToUse: 'reviews', modelInvocable: true },
-  { name: 'deploy', description: 'deploy flow', modelInvocable: true },
+  { name: 'commit-helper', description: 'commit flow', group: 'Matt Pocock', source: 'user-dsh', modelInvocable: true },
+  { name: 'code-review', description: 'review flow', whenToUse: 'reviews', group: 'Matt Pocock', source: 'user-dsh', modelInvocable: true },
+  { name: 'deploy', description: 'deploy flow', source: 'project-dsh', modelInvocable: true },
 ]
 
 const listOk = (skills: SkillRow[]): ListFn => () => Promise.resolve({ ok: true as const, value: { skills } })
@@ -129,29 +142,11 @@ describe('apply', () => {
     expect(entry?.options).toMatchObject({ key: 'skill' })
     expect(entry?.locale).toBe('skill')
     expect(entry?.component).toBe(SkillToolRow)
+    const settings = presentation.slots.entries('settings.plugins.tab')[0]
+    expect(settings?.options).toMatchObject({ id: 'skills', order: 20 })
+    expect(settings?.component).toBe(SkillsSettingsTab)
     expect(presentation.dictionaries).toEqual([{
-      namespace: 'skill', dictionaries: {
-        zh: {
-          'row.title': '加载技能',
-          'row.running': '正在加载 skill',
-          'row.preparing': '准备加载技能',
-          'row.failed': 'skill 加载失败',
-          'row.stopped': 'skill 加载已中止',
-          'row.instructions': '说明',
-          'row.inspect': '查看',
-          'menu.userOnly': '仅用户',
-        },
-        en: {
-          'row.title': 'Skill',
-          'row.running': 'Loading skill',
-          'row.preparing': 'Preparing to load a skill',
-          'row.failed': 'Skill load failed',
-          'row.stopped': 'Skill load stopped',
-          'row.instructions': 'Instructions',
-          'row.inspect': 'Inspect',
-          'menu.userOnly': 'user-only',
-        },
-      },
+      namespace: 'skill', dictionaries: { zh, en },
     }])
   })
 
@@ -244,14 +239,36 @@ describe('candidates: sessionId addressing', () => {
     // Exact payload: session address only — no agent or transport vocabulary.
     expect(payloads).toEqual([{ sessionId: 's1' }])
     expect(items).toEqual([
-      { name: 'commit-helper', description: 'commit flow' },
-      { name: 'code-review', description: 'review flow' },
+      { name: 'commit-helper', description: 'commit flow', section: 'Matt Pocock' },
+      { name: 'code-review', description: 'review flow', section: 'Matt Pocock' },
     ])
     const names = async (query: string) => (await source.candidates(proj('s1'), req(query))).map(c => c.name)
-    // 'de' prefixes deploy and is a subsequence of code-review: the prefix ranks first.
+    // 'de' prefixes deploy and is a subsequence of code-review: the prefix
+    // ranks first, and its section leads because it holds the best match.
     await expect(names('de')).resolves.toEqual(['deploy', 'code-review'])
     await expect(names('REV')).resolves.toEqual(['code-review'])
     await expect(names('zzz')).resolves.toEqual([])
+  })
+
+  it('lists an empty query A→Z: named groups first, then scope fallbacks in scope order', async () => {
+    const { source } = await bench(listOk([
+      { name: 'zed', description: 'z', source: 'bundled', modelInvocable: true },
+      { name: 'beta', description: 'b', source: 'project-dsh', modelInvocable: true },
+      { name: 'alpha', description: 'a', source: 'project-agents', modelInvocable: true },
+      { name: 'wiki', description: 'w', group: '项目', source: 'user-dsh', modelInvocable: true },
+      { name: 'lint', description: 'l', group: 'Acme', source: 'user-dsh', modelInvocable: true },
+      { name: 'fmt', description: 'f', group: 'Acme', source: 'runtime', modelInvocable: true },
+    ]))
+    const items = await source.candidates(proj('s1'), req(''))
+    expect(items.map(item => [item.section, item.name])).toEqual([
+      ['Acme', 'fmt'],
+      ['Acme', 'lint'],
+      // A group named like a scope label sorts among named groups; its members never join the scope fallback.
+      ['项目', 'wiki'],
+      ['项目', 'alpha'],
+      ['项目', 'beta'],
+      ['DSH 内置', 'zed'],
+    ])
   })
 
   it('rejects on a failed result (the slash shell owns the menu-side fold)', async () => {
@@ -279,8 +296,8 @@ describe('catalog cache', () => {
     const second = await source.candidates(proj('s1'), req('co'))
     expect(payloads).toHaveLength(1)
     expect(second).toEqual([
-      { name: 'commit-helper', description: 'commit flow' },
-      { name: 'code-review', description: 'review flow' },
+      { name: 'commit-helper', description: 'commit flow', section: 'Matt Pocock' },
+      { name: 'code-review', description: 'review flow', section: 'Matt Pocock' },
     ])
     // A different session is its own key — one more RPC, not two.
     await source.candidates(proj('s2'), req(''))
@@ -295,7 +312,7 @@ describe('catalog cache', () => {
       source.candidates(proj('s1'), req('co')),
     ])
     expect(payloads).toHaveLength(1)
-    expect(a).toEqual([{ name: 'deploy', description: 'deploy flow' }])
+    expect(a).toEqual([{ name: 'deploy', description: 'deploy flow', section: '项目' }])
     expect(b).toHaveLength(2)
   })
 
@@ -415,6 +432,29 @@ describe('lexicon', () => {
   })
 })
 
+describe('settings tab face', () => {
+  it('shares the session catalog cache, its notifications, and the subagent exclusion', async () => {
+    const { list, payloads } = countingList()
+    const { ctx, source, presentation } = await bench(list, sid('child'))
+    const raw = presentation.slots.entries('settings.plugins.tab')[0]!.inject!()
+    // StoredEntry erases the inject face; the registration declares SkillsSettingsTabInjected.
+    const face = { list: raw.list, subscribe: raw.subscribe, hasCatalog: raw.hasCatalog } as SkillsSettingsTabInjected
+    expect(face.hasCatalog(sid('s1'))).toBe(true)
+    expect(face.hasCatalog(sid('child'))).toBe(false)
+    const listener = vi.fn()
+    const unsubscribe = face.subscribe(sid('s1'), listener)
+    await expect(face.list(sid('s1'))).resolves.toEqual(CATALOG)
+    await source.candidates(proj('s1'), req(''))
+    expect(payloads).toHaveLength(1)
+    expect(listener).toHaveBeenCalledTimes(1)
+    ctx.emit('connection/reset')
+    expect(listener).toHaveBeenCalledTimes(2)
+    unsubscribe()
+    await face.list(sid('s1'))
+    expect(listener).toHaveBeenCalledTimes(2)
+  })
+})
+
 describe('pick lands plain text', () => {
   it('onPick returns the literal /name text with a closing space', async () => {
     const { source } = await bench(listOk(CATALOG))
@@ -442,14 +482,14 @@ describe('pick lands plain text', () => {
 describe('user-only marking', () => {
   it('prefixes the description of candidates the model cannot invoke', async () => {
     const rows: SkillRow[] = [
-      { name: 'shared-skill', description: 'both surfaces', modelInvocable: true },
-      { name: 'user-only-skill', description: 'user surface only', modelInvocable: false },
+      { name: 'shared-skill', description: 'both surfaces', source: 'custom', modelInvocable: true },
+      { name: 'user-only-skill', description: 'user surface only', source: 'custom', modelInvocable: false },
     ]
     const { source } = await bench(listOk(rows))
     const candidates = await source.candidates(proj('s1'), req(''))
     expect(candidates).toEqual([
-      { name: 'shared-skill', description: 'both surfaces' },
-      { name: 'user-only-skill', description: '仅用户 · user surface only' },
+      { name: 'shared-skill', description: 'both surfaces', section: '自定义' },
+      { name: 'user-only-skill', description: '仅用户 · user surface only', section: '自定义' },
     ])
   })
 })

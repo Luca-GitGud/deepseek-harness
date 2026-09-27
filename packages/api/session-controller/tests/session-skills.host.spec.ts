@@ -57,7 +57,9 @@ describe('SessionSkillCatalog', () => {
         name: 'review',
         description: 'Review the current change.',
         whenToUse: 'Before publishing.',
+        group: 'Review Tools',
         path: '/cold/project/.agents/skills/review/SKILL.md',
+        source: 'project-agents',
         invocation: { modelInvocable: true, userInvocable: true },
       },
       {
@@ -74,7 +76,9 @@ describe('SessionSkillCatalog', () => {
         name: 'review',
         description: 'Review the current change.',
         whenToUse: 'Before publishing.',
+        group: 'Review Tools',
         path: '/cold/project/.agents/skills/review/SKILL.md',
+        source: 'project-agents',
         modelInvocable: true,
       }],
     })

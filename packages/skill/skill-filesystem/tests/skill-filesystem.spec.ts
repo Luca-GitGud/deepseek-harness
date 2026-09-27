@@ -193,6 +193,7 @@ describe('FileSystemSkillProvider', () => {
     await writeSkill(join(project, '.agents/skills'), 'same', 'project agents skill')
     await writeSkill(join(project, '.dsh/skills'), 'same', 'project dsh skill')
     await writeSkill(custom, 'custom-only', 'custom only')
+    await writeFile(join(custom, 'custom-only/SKILL.md'), '---\nname: custom-only\ngroup: Design Tools\ndescription: custom only\n---\n\nUse the skill.\n')
     await writeSkill(join(home, '.dsh/skills/.system'), 'hidden-system', 'hidden system')
 
     const bundled = await tempDir('skill-bundled')
@@ -206,7 +207,11 @@ describe('FileSystemSkillProvider', () => {
       'custom-only',
       'same',
     ])
-    expect(skills.find(skill => skill.name === 'custom-only')?.description).toBe('custom only')
+    expect(skills.find(skill => skill.name === 'custom-only')).toMatchObject({
+      description: 'custom only',
+      group: 'Design Tools',
+    })
+    expect((await ctx.skills.get('custom-only'))?.group).toBe('Design Tools')
     expect(skills.find(skill => skill.name === 'same')?.description).toBe('project dsh skill')
     expect(skills.find(skill => skill.name === 'same')?.source).toBe('project-dsh')
     expect(skills.find(skill => skill.name === 'hidden-system')).toBeUndefined()
@@ -374,6 +379,27 @@ describe('FileSystemSkillProvider', () => {
     const ctx = await setupLocal(home)
 
     expect((await ctx.skills.list()).map(skill => skill.name)).toEqual(['good-skill'])
+  })
+
+  it('trims group frontmatter and rejects non-string, blank, or multi-line groups without hiding valid siblings', async () => {
+    const home = await tempDir('skill-invalid-group')
+    const root = join(home, '.dsh/skills')
+    await mkdir(root, { recursive: true })
+    await writeFile(join(root, 'padded-group.md'), '---\nname: padded-group\ndescription: padded\ngroup: "  Design Tools  "\n---\n\nGood.\n')
+    const invalid = [
+      ['numeric-group', 'group: 1'],
+      ['null-group', 'group:'],
+      ['empty-group', 'group: ""'],
+      ['blank-group', 'group: "   "'],
+      ['multiline-group', 'group: "Design\\nTools"'],
+    ] as const
+    for (const [name, field] of invalid) {
+      await writeFile(join(root, `${name}.md`), `---\nname: ${name}\ndescription: ${name}\n${field}\n---\n\nBad.\n`)
+    }
+
+    const ctx = await setupLocal(home)
+
+    expect((await ctx.skills.list()).map(skill => [skill.name, skill.group])).toEqual([['padded-group', 'Design Tools']])
   })
 
   it('supports CRLF frontmatter and ignores delimiter-looking text inside YAML values', async () => {
