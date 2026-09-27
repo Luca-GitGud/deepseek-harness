@@ -1,0 +1,27 @@
+- tabpanel "Skills":
+  - searchbox "Search skills"
+  - heading "Project" [level=3]
+  - text: 4 skills
+  - list:
+    - listitem:
+      - code: /changelog-check
+      - text: Release
+      - paragraph: Check the changelog against tagged commits
+    - listitem:
+      - code: /docs-lint
+      - text: Docs
+      - paragraph: Lint Markdown documentation
+    - listitem:
+      - code: /release-notes
+      - text: Release
+      - paragraph: Draft release notes from merged changes
+    - listitem:
+      - code: /tidy-imports
+      - paragraph: Sort and prune imports
+  - heading "User installed" [level=3]
+  - text: 1 skill
+  - list:
+    - listitem:
+      - code: /standup-summary
+      - text: user-only
+      - paragraph: Summarize yesterday for standup

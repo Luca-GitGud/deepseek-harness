@@ -234,6 +234,7 @@ describe('SkillRegistry registry', () => {
     const cases: { patch: Partial<SkillCandidate>; expected: string }[] = [
       { patch: { name: { value: 'candidate' } as unknown as string }, expected: 'non-string skill name' },
       { patch: { whenToUse: 1 as unknown as string }, expected: 'non-string whenToUse' },
+      { patch: { group: '' }, expected: 'invalid group' },
       { patch: { source: { value: 'source' } as unknown as string }, expected: 'non-string source' },
       { patch: { rank: '1' as unknown as number }, expected: 'invalid rank' },
       { patch: { provider: { value: 'provider' } as unknown as string }, expected: 'non-string provider' },
@@ -413,6 +414,7 @@ describe('SkillRegistry registry', () => {
       name: 'stable-skill',
       description: 'Stable description',
       whenToUse: 'When stability matters.',
+      group: 'Stable Collection',
       invocation,
       provider: 'detached',
       source: 'test',
@@ -426,6 +428,7 @@ describe('SkillRegistry registry', () => {
       name: 'stable-skill',
       description: 'Stable description',
       whenToUse: 'When stability matters.',
+      group: 'Stable Collection',
       invocation,
       provider: 'detached',
       source: 'test',
@@ -452,6 +455,7 @@ describe('SkillRegistry registry', () => {
     expect(listed).toEqual([expect.objectContaining({
       name: 'stable-skill',
       description: 'Stable description',
+      group: 'Stable Collection',
       resourceBase: { kind: 'opaque', description: 'candidate resources' },
     })])
     expect(listed[0]?.path).toBe(candidate.path)
@@ -521,6 +525,7 @@ describe('SkillRegistry registry', () => {
         expected: 'invocation.userInvocable',
       },
       { patch: { whenToUse: 1 as unknown as string }, expected: 'whenToUse must be a string' },
+      { patch: { group: '' }, expected: 'group must be a non-empty string' },
       { patch: { source: { value: 'source' } as unknown as string }, expected: 'source must be a string' },
       { patch: { provider: { value: 'provider' } as unknown as string }, expected: 'provider must be a string' },
       { patch: { content: { value: 'content' } as unknown as string }, expected: 'content must be a string' },
@@ -1025,6 +1030,7 @@ describe('SkillRegistry registry', () => {
     await ctx.plugin(SkillRegistry)
     expect(() => ctx.skills.register({ name: 'Bad_Name', description: 'Bad', source: 'runtime', content: 'bad' })).toThrow('invalid skill name')
     expect(() => ctx.skills.register({ name: 'no-description', description: '', source: 'runtime', content: 'bad' })).toThrow('requires a description')
+    expect(() => ctx.skills.register({ name: 'empty-group', description: 'Bad', group: '', source: 'runtime', content: 'bad' })).toThrow('group must be non-empty')
     expect(() => ctx.skills.register({
       name: 'bad-invocation',
       description: 'Bad invocation',

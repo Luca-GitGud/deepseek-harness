@@ -29,7 +29,11 @@ kind: "package-reference"
 
 ### source 提供什么
 
-普通会话的候选来自 `skills/list` Remote；宿主提供每一个用户可调用的 skill，`modelInvocable: false` 的条目（即 `disable-model-invocation` skill，此路径是其唯一入口）会以当前语言把仅限用户标记作为描述前缀带上。结果经 `/` 菜单共享的名字排序器（ui-primitives 的 `rankByName`）排名：查询作为不区分大小写的有序子序列匹配 skill 名，前缀命中排最前，同分保持宿主顺序（[排名决策](../../../.agents/notes/archived/feature/2026-08-04-web-slash-command-fuzzy-discovery.md)）。`skills/list` 调用失败时会被记录并静默丢弃该菜单组——菜单只显示 pending／ready 状态。
+普通会话的候选来自 `skills/list` Remote；宿主提供每一个用户可调用的 skill，`modelInvocable: false` 的条目（即 `disable-model-invocation` skill，此路径是其唯一入口）会以当前语言把仅限用户标记作为描述前缀带上。`/` 菜单先用共享的 `rankByName` 匹配器筛选候选（查询作为不区分大小写的有序子序列匹配 skill 名，前缀命中排最前，同分保持宿主顺序；[排名决策](../../../.agents/notes/archived/feature/2026-08-04-web-slash-command-fuzzy-discovery.md)），再按 skill 可选的仓库或集合 `group` 分段；没有该字段时回退到本地化的安装范围。输入查询时，每段内保持排名顺序，各段按其最佳匹配排序。查询为空时，先按字母顺序列出命名分组，再按项目、用户、自定义、内置、运行时、其他的顺序列出安装范围分段，段内名称按字母排序；与范围标签同名的分组不会并入该范围的 skill。`skills/list` 调用失败时会被记录并静默丢弃该菜单组——菜单只显示 pending／ready 状态。
+
+### Skills 总览
+
+插件设置区包含当前主 Session 的 Skills 标签页。它按安装范围对同一份用户可调用目录分组，按字母顺序排列命令，可搜索名称、描述和集合标签，并标记仅限用户的 skill。它读取 `/` 菜单缓存的目录，并在该 Session 的目录失效时（例如切换 agent 预设）重新加载。由于 skill 可见性取决于工作区与 agent 预设，该标签页会要求先打开一个 Session，而不会显示机器全局清单；主视图显示 subagent Session 时也会显示该提示。
 
 ### skill 工具行
 

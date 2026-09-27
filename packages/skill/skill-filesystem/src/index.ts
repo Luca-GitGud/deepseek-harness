@@ -112,6 +112,7 @@ interface ParsedSkill extends SkillText {
   name: string
   description: string
   whenToUse?: string
+  group?: string
   invocation: SkillInvocationPolicy
   metadata?: Record<string, unknown>
 }
@@ -215,6 +216,7 @@ export class FileSystemSkillProvider implements SkillProvider {
       name: parsed.name,
       description: parsed.description,
       ...parsed.whenToUse !== undefined ? { whenToUse: parsed.whenToUse } : {},
+      ...parsed.group !== undefined ? { group: parsed.group } : {},
       invocation: parsed.invocation,
       source: candidate.source,
       provider: this.name,
@@ -737,6 +739,7 @@ async function discoverRoot(root: SkillRoot, ctx: Context, provider: string): Pr
       name: parsed.name,
       description: parsed.description,
       ...parsed.whenToUse !== undefined ? { whenToUse: parsed.whenToUse } : {},
+      ...parsed.group !== undefined ? { group: parsed.group } : {},
       invocation: parsed.invocation,
       provider,
       source: root.source,
@@ -828,10 +831,18 @@ async function parseSkillFile(path: string, ctx: Context, signal?: AbortSignal, 
     ctx.logger.warn(`skill file ${path} ignored: invalid invocation frontmatter: ${errorMessage(error)}`)
     return undefined
   }
+  let group
+  try {
+    group = parseGroup(parsed.data)
+  } catch (error) {
+    ctx.logger.warn(`skill file ${path} ignored: invalid group frontmatter: ${errorMessage(error)}`)
+    return undefined
+  }
   return {
     name,
     description,
     ...optionalString(parsed.data, 'whenToUse'),
+    ...group !== undefined ? { group } : {},
     invocation,
     ...optionalMetadata(parsed.data),
     path: raw.path,
@@ -995,6 +1006,17 @@ function stringField(data: Record<string, unknown>, key: string): string | undef
 function optionalString(data: Record<string, unknown>, key: string): { [K in typeof key]?: string } {
   const value = data[key]
   return typeof value === 'string' && value.length > 0 ? { [key]: value } : {}
+}
+
+/** Parse the optional single-line `group` label; a present non-string, blank, or multi-line value throws. */
+function parseGroup(data: Record<string, unknown>): string | undefined {
+  if (!Object.hasOwn(data, 'group')) return undefined
+  const value = data.group
+  if (typeof value !== 'string') throw new TypeError('frontmatter field "group" must be a string')
+  const group = value.trim()
+  if (group.length === 0) throw new Error('frontmatter field "group" must not be blank')
+  if (/[\r\n]/.test(group)) throw new Error('frontmatter field "group" must be a single line')
+  return group
 }
 
 function parseInvocationPolicy(data: Record<string, unknown>): SkillInvocationPolicy {
