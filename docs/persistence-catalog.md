@@ -697,7 +697,7 @@ Source: [`packages/interaction/permission-presets/src/index.ts:59`](../packages/
 'plan/mode': { active: boolean }
 ```
 
-Source: [`packages/plan/plan-mode/src/index.ts:53`](../packages/plan/plan-mode/src/index.ts)
+Source: [`packages/plan/plan-mode/src/index.ts:52`](../packages/plan/plan-mode/src/index.ts)
 
 ### `request/*`
 
@@ -775,7 +775,7 @@ Source: [`packages/sandbox/sandbox-policy/src/session-mode.ts:33`](../packages/s
 
 Types: [ScheduleChange](subsystems/schedule.md)
 
-Source: [`packages/schedule/schedule/src/types.ts:358`](../packages/schedule/schedule/src/types.ts)
+Source: [`packages/schedule/schedule/src/types.ts:365`](../packages/schedule/schedule/src/types.ts)
 
 ### `session/*`
 
@@ -798,8 +798,8 @@ Source: [`packages/schedule/schedule/src/types.ts:358`](../packages/schedule/sch
  * keep ordinary restore and replay lifecycle boundaries.
  *
  * Only the `Session` constructor and `buildForkSeed` may create this marker.
- * The invariant companion deliberately constrains nothing here, so a plugin
- * appending one would silently classify every live bracket before it as seed history.
+ * Session append does not reject other writers, so a plugin appending one
+ * would silently classify every live bracket before it as seed history.
  *
  * An owner of a standalone open/close bracket (`compaction/start` …
  * `compaction/end`) reads it because seed history and live work are otherwise
@@ -4545,7 +4545,7 @@ Sources: [`packages/skill/tool-skill/src/index.ts:34`](../packages/skill/tool-sk
 
 SHA-256: `672c4aa2a9b736e3d6e5da6346d2e2ed5e3573f2d0baafa18e7407c9f3fee3db`
 
-Sources: [`packages/skill/skill/src/index.ts:146`](../packages/skill/skill/src/index.ts)
+Sources: [`packages/skill/skill/src/index.ts:148`](../packages/skill/skill/src/index.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -5335,7 +5335,7 @@ Array of `number`.
 
 SHA-256: `4cd48f3e5108bd6ebedf7301c3638839b8b2b9db8dbd493974177fbdeb91a01b`
 
-Sources: [`packages/api/session-controller/src/types.ts:398`](../packages/api/session-controller/src/types.ts) · [`packages/attachment/attachment/src/brand.ts:6`](../packages/attachment/attachment/src/brand.ts) · [`packages/compaction/compaction/src/brand.ts:4`](../packages/compaction/compaction/src/brand.ts) · [`packages/core/session/src/types.ts:20`](../packages/core/session/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:20`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:32`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:8`](../packages/experimental/agent-team/src/types.ts) · [`packages/feedback/message-feedback/src/types.ts:14`](../packages/feedback/message-feedback/src/types.ts) · [`packages/goal/goal/src/types.ts:17`](../packages/goal/goal/src/types.ts) · [`packages/interaction/commands/src/brand.ts:31`](../packages/interaction/commands/src/brand.ts) · [`packages/interaction/user-approval/src/types.ts:17`](../packages/interaction/user-approval/src/types.ts) · [`packages/llm/llm-retry/src/brand.ts:4`](../packages/llm/llm-retry/src/brand.ts) · [`packages/llm/llm/src/brand.ts:16`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:31`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:43`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:67`](../packages/llm/llm/src/brand.ts) · [`packages/schedule/schedule/src/types.ts:14`](../packages/schedule/schedule/src/types.ts) · [`packages/session/session-title/src/index.ts:42`](../packages/session/session-title/src/index.ts) · [`packages/session/session-title/src/types.ts:17`](../packages/session/session-title/src/types.ts) · [`packages/webhook/webhook/src/brand.ts:12`](../packages/webhook/webhook/src/brand.ts) · [`packages/webhook/webhook/src/brand.ts:6`](../packages/webhook/webhook/src/brand.ts) · [`packages/webhook/webhook/src/brand.ts:9`](../packages/webhook/webhook/src/brand.ts) · [`packages/workflow/workflow/src/types.ts:13`](../packages/workflow/workflow/src/types.ts)
+Sources: [`packages/api/session-controller/src/types.ts:402`](../packages/api/session-controller/src/types.ts) · [`packages/attachment/attachment/src/brand.ts:6`](../packages/attachment/attachment/src/brand.ts) · [`packages/compaction/compaction/src/brand.ts:4`](../packages/compaction/compaction/src/brand.ts) · [`packages/core/session/src/types.ts:20`](../packages/core/session/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:20`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:32`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:8`](../packages/experimental/agent-team/src/types.ts) · [`packages/feedback/message-feedback/src/types.ts:14`](../packages/feedback/message-feedback/src/types.ts) · [`packages/goal/goal/src/types.ts:17`](../packages/goal/goal/src/types.ts) · [`packages/interaction/commands/src/brand.ts:31`](../packages/interaction/commands/src/brand.ts) · [`packages/interaction/user-approval/src/types.ts:17`](../packages/interaction/user-approval/src/types.ts) · [`packages/llm/llm-retry/src/brand.ts:4`](../packages/llm/llm-retry/src/brand.ts) · [`packages/llm/llm/src/brand.ts:16`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:31`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:43`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:67`](../packages/llm/llm/src/brand.ts) · [`packages/schedule/schedule/src/types.ts:14`](../packages/schedule/schedule/src/types.ts) · [`packages/session/session-title/src/index.ts:42`](../packages/session/session-title/src/index.ts) · [`packages/session/session-title/src/types.ts:17`](../packages/session/session-title/src/types.ts) · [`packages/webhook/webhook/src/brand.ts:12`](../packages/webhook/webhook/src/brand.ts) · [`packages/webhook/webhook/src/brand.ts:6`](../packages/webhook/webhook/src/brand.ts) · [`packages/webhook/webhook/src/brand.ts:9`](../packages/webhook/webhook/src/brand.ts) · [`packages/workflow/workflow/src/types.ts:13`](../packages/workflow/workflow/src/types.ts)
 
 `string`
 
@@ -5509,7 +5509,7 @@ Array of `unknown` (opaque).
 
 SHA-256: `20a57544bbf204dacd1ae6beb2ab29444365c3c869f2afdf489dcdcbc3d9c8c5`
 
-Sources: [`packages/plan/plan-mode/src/index.ts:53`](../packages/plan/plan-mode/src/index.ts)
+Sources: [`packages/plan/plan-mode/src/index.ts:52`](../packages/plan/plan-mode/src/index.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -7268,7 +7268,7 @@ Sources: [`packages/core/tools/src/index.ts:34`](../packages/core/tools/src/inde
 
 SHA-256: `6a4f72e2e179e17b922f2a9392c0e1c8f8c707f32494372454850a3eb184a6e7`
 
-Sources: [`packages/api/session-controller/src/types.ts:403`](../packages/api/session-controller/src/types.ts)
+Sources: [`packages/api/session-controller/src/types.ts:407`](../packages/api/session-controller/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|

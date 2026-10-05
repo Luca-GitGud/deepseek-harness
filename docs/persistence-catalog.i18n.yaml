@@ -144,8 +144,8 @@
   en: 4294f78d26ed985b
   zh: 4294f78d26ed985b
 /session-persistence-event-catalog/events/plan/plan-mode-log-only:
-  en: 9ae5537eeae238de
-  zh: 6be761c7fd83fdce
+  en: 862175bfe8692ef7
+  zh: a8ab123bf674cf77
 /session-persistence-event-catalog/events/request:
   en: a8df82440ebdf5f8
   zh: a8df82440ebdf5f8
@@ -165,8 +165,8 @@
   en: e5b55405bd2b69f5
   zh: e5b55405bd2b69f5
 /session-persistence-event-catalog/events/schedule/schedule-change-log-only:
-  en: 353442ce8925614f
-  zh: 71e6ab8296c74d2a
+  en: 162584304e006c72
+  zh: d8a6bacf60777aa9
 /session-persistence-event-catalog/events/session:
   en: a1ac8f2660a4f61e
   zh: a1ac8f2660a4f61e
@@ -1158,8 +1158,8 @@
   en: 3e76d9f3d5bf82a0
   zh: fd037f5c12ee6330
 /session-persistence-event-catalog/resolved-persistence-types/skillinvocationsource:
-  en: ecc15ebadb77afdf
-  zh: 97ac27d6a4175f6f
+  en: dca39cb6b8d0ee21
+  zh: 91d08af5ba3bb94a
 /session-persistence-event-catalog/resolved-persistence-types/streamchunk:
   en: e865a9a3b7749c1a
   zh: 16800bf55135c89e
@@ -1284,8 +1284,8 @@
   en: 38211d71372021e4
   zh: c0305af81a67e285
 /session-persistence-event-catalog/resolved-persistence-types/string:
-  en: 052f9ce1988e44f2
-  zh: 5adaad6c9bca43e2
+  en: 22ce576bf86d762e
+  zh: ef6014af7befe5ee
 /session-persistence-event-catalog/resolved-persistence-types/string~2:
   en: 0089620bf4638263
   zh: 1922bef1713094bb
@@ -1332,8 +1332,8 @@
   en: a74e3dfa51c987af
   zh: 6c3c87974d7a7260
 /session-persistence-event-catalog/resolved-persistence-types/active~2:
-  en: c861888d6239b700
-  zh: a9b2271d3c6b8737
+  en: a3de6a6fe9672c7a
+  zh: a357481e27b3b81f
 /session-persistence-event-catalog/resolved-persistence-types/agentpreset:
   en: b8a0f8aac9708056
   zh: f5f004bd205b41e1
@@ -1761,8 +1761,8 @@
   en: 77a2e15c8413b18c
   zh: 91d39eed9dfd96d1
 /session-persistence-event-catalog/resolved-persistence-types/kind-user:
-  en: aacb77f1cead58ba
-  zh: e6ce9dac4bdd07b7
+  en: 1a0861adcd190e22
+  zh: bf37057164fca7bf
 /session-persistence-event-catalog/resolved-persistence-types/kind-user-approval:
   en: a52d2dfbaf844127
   zh: 4c5306ca40f20873
